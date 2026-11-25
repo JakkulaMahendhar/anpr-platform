@@ -1,0 +1,31 @@
+[project]
+name = "anpr-vision"
+version = "0.1.0"
+description = "ANPR vision worker: detection, tracking, plate OCR, event publishing"
+requires-python = ">=3.11"
+dependencies = [
+    "opencv-python-headless>=4.10,<5.0",
+    "numpy>=1.26,<3.0",
+    "pydantic>=2.9,<3.0",
+    "pyyaml>=6.0,<7.0",
+]
+# Milestone 1 adds: ultralytics, onnxruntime, fast-plate-ocr, supervision, redis.
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9.0",
+    "ruff>=0.8,<1.0",
+]
+
+[project.scripts]
+anpr-check-cameras = "anpr.tools.check_cameras:main"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["anpr*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

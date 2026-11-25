@@ -1,0 +1,107 @@
+# ANPR platform - infrastructure for local development.
+# All ports bind to 127.0.0.1 so nothing is exposed on the network.
+# The vision worker is NOT here: on macOS it runs natively to use the Apple GPU.
+
+name: anpr
+
+services:
+  postgres:
+    image: timescale/timescaledb:2.17.2-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    # AOF persistence so queued plate events survive a restart.
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+  # S3-compatible object storage for plate / vehicle images (SeaweedFS, Apache-2.0).
+  # The API talks plain S3, so production can swap this for AWS S3 or any S3 service.
+  s3:
+    image: chrislusf/seaweedfs:3.97
+    restart: unless-stopped
+    entrypoint: ["sh", "/start.sh"]
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    volumes:
+      - ./infra/seaweedfs/start.sh:/start.sh:ro
+      - s3_data:/data
+    ports:
+      - "127.0.0.1:${S3_PORT:-8333}:8333"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8333/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # RTSP server. In development it also replays data/videos/<camN>.mp4 as fake
+  # cameras (or a test pattern if the file is missing). In production, real
+  # cameras publish here or the worker connects to them directly.
+  mediamtx:
+    image: bluenviron/mediamtx:1.9.3-ffmpeg
+    restart: unless-stopped
+    volumes:
+      - ./infra/mediamtx/mediamtx.yml:/mediamtx.yml:ro
+      - ./infra/mediamtx/publish.sh:/scripts/publish.sh:ro
+      - ./data/videos:/videos:ro
+    ports:
+      - "127.0.0.1:8554:8554"        # RTSP
+      - "127.0.0.1:8888:8888"        # HLS (browser preview)
+      - "127.0.0.1:8889:8889"        # WebRTC (dashboard, milestone 5)
+      - "127.0.0.1:8189:8189/udp"    # WebRTC ICE
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      S3_ENDPOINT_URL: http://s3:8333
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      s3:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg_data:
+  redis_data:
+  s3_data:
