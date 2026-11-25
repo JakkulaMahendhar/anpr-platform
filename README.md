@@ -91,8 +91,15 @@ config/         cameras.yaml — camera URLs, plate region hint, monitoring zone
 infra/          MediaMTX, Postgres init, SeaweedFS start script
 data/videos/    local test footage (git-ignored)
 scripts/        helper scripts
-.github/        CI: lint, tests, compose validation, image build
+docs/           milestone documents and development workflow
+.github/        CI, pull request template
 ```
+
+## Documentation
+
+- [Milestones](docs/milestones/README.md): one document per milestone covering what was
+  built, why, libraries, design decisions and verified results
+- [Workflow](docs/workflow.md): one branch and one pull request per milestone
 
 ## Configuration
 
