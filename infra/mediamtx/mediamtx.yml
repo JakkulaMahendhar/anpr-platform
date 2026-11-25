@@ -1,0 +1,31 @@
+# MediaMTX configuration (https://github.com/bluenviron/mediamtx)
+logLevel: info
+
+rtsp: yes
+rtspAddress: :8554
+
+hls: yes
+hlsAddress: :8888
+
+webrtc: yes
+webrtcAddress: :8889
+webrtcLocalUDPAddress: :8189
+
+rtmp: no
+srt: no
+
+api: yes
+apiAddress: :9997
+
+# One path per camera. In development each path replays /videos/<path>.mp4
+# in a loop (see publish.sh). Add cam4, cam5... here and in config/cameras.yaml.
+paths:
+  cam1:
+    runOnInit: sh /scripts/publish.sh
+    runOnInitRestart: yes
+  cam2:
+    runOnInit: sh /scripts/publish.sh
+    runOnInitRestart: yes
+  cam3:
+    runOnInit: sh /scripts/publish.sh
+    runOnInitRestart: yes

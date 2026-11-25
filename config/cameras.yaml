@@ -1,0 +1,27 @@
+# Camera registry - shared by the vision worker (and later seeded into the API).
+#
+# id          lowercase id, matches the MediaMTX path in development
+# url         RTSP URL; ${VARS} are expanded from the environment, so real
+#             camera credentials stay in .env, never in this file
+# region_hint which plate rules to prefer: IN, UAE or auto
+# zone        monitoring zone polygon in normalised coordinates (0..1 of the
+#             frame width/height). Plates are read only inside this area.
+
+cameras:
+  - id: cam1
+    name: "Dev camera 1"
+    url: rtsp://${RTSP_HOST:-localhost}:8554/cam1
+    region_hint: IN
+    zone: [[0.05, 0.45], [0.95, 0.45], [0.95, 0.95], [0.05, 0.95]]
+
+  - id: cam2
+    name: "Dev camera 2"
+    url: rtsp://${RTSP_HOST:-localhost}:8554/cam2
+    region_hint: UAE
+    zone: [[0.05, 0.45], [0.95, 0.45], [0.95, 0.95], [0.05, 0.95]]
+
+  - id: cam3
+    name: "Dev camera 3"
+    url: rtsp://${RTSP_HOST:-localhost}:8554/cam3
+    region_hint: auto
+    zone: [[0.05, 0.45], [0.95, 0.45], [0.95, 0.95], [0.05, 0.95]]

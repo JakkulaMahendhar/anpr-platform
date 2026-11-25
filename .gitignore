@@ -1,0 +1,36 @@
+# Secrets
+.env
+*.pem
+*.key
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Data and models (large / private - never commit footage or plate images)
+data/**
+!data/videos/
+data/videos/*
+!data/videos/.gitkeep
+!data/videos/README.md
+models/
+*.pt
+*.onnx
+*.engine
+*.mlpackage/
+runs/
+mlruns/
+
+# Node (dashboard, milestone 5)
+node_modules/
+dist/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
